@@ -1,31 +1,18 @@
-from flask import Flask, request, render_template
+from flask import Flask, render_template
 import pandas as pd
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Lê o CSV fixo que está no repositório
+    df = pd.read_csv("startup_data_cleaned.csv", encoding="utf-8")
 
-@app.route('/display', methods=['POST'])
-def display_file():
-    file = request.files['file']
-    if not file:
-        return "No file"
+    # Converte a tabela para HTML
+    table_html = df.to_html(classes='table table-striped', index=False)
 
-    # Tenta ler o arquivo com diferentes codificações
-    try:
-        df = pd.read_csv(file, delimiter=";")
-    except UnicodeDecodeError:
-        file.seek(0)  # Reseta o ponteiro do arquivo
-        try:
-            df = pd.read_csv(file, encoding='latin1', delimiter=";")
-        except UnicodeDecodeError:
-            file.seek(0)  # Reseta o ponteiro do arquivo
-            df = pd.read_csv(file, encoding='ISO-8859-1', delimiter=";")
-
-    # Renderiza o template com os dados do arquivo CSV
-    return render_template('display.html', tables=[df.to_html(classes='data')], titles=df.columns.values)
+    # Envia a tabela para o template
+    return render_template('index.html', table=table_html)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
